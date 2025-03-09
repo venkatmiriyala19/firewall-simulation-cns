@@ -12,7 +12,7 @@ class Protocol(Enum):
     FTP = "FTP"
     SSH = "SSH"
     TELNET = "TELNET"
-    ANY = "ANY"  # Added the missing ANY protocol
+    ANY = "ANY"  
 
 class PacketDirection(Enum):
     INBOUND = "INBOUND"
@@ -35,7 +35,7 @@ class FirewallRule:
         self.destination_ip = destination_ip
         self.destination_port = destination_port
         self.direction = direction
-        self.action = action  # "ALLOW" or "BLOCK"
+        self.action = action  
     
     def __str__(self):
         return (f"Rule '{self.name}': {self.protocol.value} {self.direction.value} "
@@ -107,7 +107,7 @@ class Firewall:
             return True
         if rule_ip == packet_ip:
             return True
-        # Check for CIDR notation (simplified)
+        
         if "/" in rule_ip:
             base_ip, subnet = rule_ip.split("/")
             base_parts = base_ip.split(".")
@@ -136,7 +136,7 @@ class Firewall:
         """Process a packet and determine if it should be allowed or blocked."""
         self.packet_counter += 1
         
-        # Deep packet inspection if payload exists
+        
         if packet.payload:
             is_safe, reason = self.inspect_payload(packet.payload)
             if not is_safe:
@@ -144,9 +144,9 @@ class Firewall:
                 self.blocked_packets += 1
                 return False
         
-        # Check against firewall rules
+        
         for rule in self.rules:
-            # Check if rule applies to this packet
+            
             if (rule.protocol == packet.protocol or rule.protocol == Protocol.ANY) and \
                rule.direction == packet.direction and \
                self._is_ip_match(rule.source_ip, packet.source_ip) and \
@@ -154,17 +154,17 @@ class Firewall:
                self._is_ip_match(rule.destination_ip, packet.destination_ip) and \
                self._is_port_match(rule.destination_port, packet.destination_port):
                 
-                # Rule matched
+                
                 if rule.action == "ALLOW":
                     self._log_packet(packet, "ALLOW", f"Matched rule: {rule.name}")
                     self.allowed_packets += 1
                     return True
-                else:  # BLOCK
+                else:  
                     self._log_packet(packet, "BLOCK", f"Matched rule: {rule.name}")
                     self.blocked_packets += 1
                     return False
         
-        # Default policy: block if no rule matches
+        
         self._log_packet(packet, "BLOCK", "No matching rule (default policy)")
         self.blocked_packets += 1
         return False
@@ -201,12 +201,12 @@ class Firewall:
             print(f"{entry['timestamp']} | {entry['action']} | {entry['protocol']} {entry['direction']} | "
                   f"{entry['source']} -> {entry['destination']} | {entry['reason']}")
 
-# Example usage
+
 def simulation():
-    # Create firewall
+    
     fw = Firewall("Network Edge Firewall")
     
-    # Add rules
+    
     fw.add_rule(FirewallRule("Allow HTTP", Protocol.HTTP, "*", None, "192.168.1.10", 80, 
                               PacketDirection.INBOUND, "ALLOW"))
     fw.add_rule(FirewallRule("Allow HTTPS", Protocol.HTTPS, "*", None, "192.168.1.10", 443, 
@@ -218,7 +218,7 @@ def simulation():
     fw.add_rule(FirewallRule("Allow Outbound", Protocol.TCP, "192.168.1.*", None, "*", None, 
                               PacketDirection.OUTBOUND, "ALLOW"))
     
-    # Simulate some packets
+    
     packets = [
         Packet(Protocol.HTTP, "203.0.113.5", 32105, "192.168.1.10", 80, PacketDirection.INBOUND),
         Packet(Protocol.HTTPS, "198.51.100.2", 49876, "192.168.1.10", 443, PacketDirection.INBOUND),
@@ -226,7 +226,7 @@ def simulation():
         Packet(Protocol.SSH, "10.0.0.5", 55555, "192.168.1.10", 22, PacketDirection.INBOUND),
         Packet(Protocol.SSH, "203.0.113.10", 55555, "192.168.1.10", 22, PacketDirection.INBOUND),
         Packet(Protocol.TCP, "192.168.1.10", 49999, "203.0.113.5", 80, PacketDirection.OUTBOUND),
-        # Packet with suspicious payload
+        
         Packet(Protocol.HTTP, "203.0.113.100", 32105, "192.168.1.10", 80, PacketDirection.INBOUND, 
                payload="GET /login.php?username=admin&password=123456 HTTP/1.1"),
         Packet(Protocol.HTTP, "203.0.113.101", 32107, "192.168.1.10", 80, PacketDirection.INBOUND, 
@@ -238,7 +238,7 @@ def simulation():
         result = "ALLOWED" if fw.process_packet(packet) else "BLOCKED"
         print(f"{packet} -> {result}")
     
-    # Show logs and statistics
+    
     fw.display_log()
     
     print("\n--- Firewall Statistics ---")
